@@ -216,7 +216,7 @@ export default function Home() {
                                       shadow-[0_0_25px_rgba(147,51,234,1),_0_0_50px_rgba(147,51,234,0.7),_0_0_100px_rgba(147,51,234,0.5)]
                                       transition-transform duration-300 hover:scale-105">
                             <img 
-                                src="src/assets/profileimage.png" 
+                                src="src\assets\profileimage.png" 
                                 alt="Logo" 
                                 className="w-full h-full object-cover"
                             />
@@ -261,7 +261,7 @@ export default function Home() {
                             variant="default"
                         >
                             <img 
-                                src="src/assets/Gemini Logo.png" 
+                                src="src\assets\Gemini Logo.png" 
                                 alt="AI" 
                                 className="w-6 h-6 mr-2" 
                             />
@@ -279,7 +279,7 @@ export default function Home() {
                                       shadow-[0_0_25px_rgba(147,51,234,1),_0_0_50px_rgba(147,51,234,0.7),_0_0_100px_rgba(147,51,234,0.5)]
                                       transition-transform duration-300 hover:scale-105">
                             <img 
-                                src="src/assets/profileimage.png" 
+                                src="src\assets\profileimage.png" 
                                 alt="Logo" 
                                 className="w-full h-full object-cover"
                             />
@@ -304,7 +304,7 @@ export default function Home() {
                             variant="default"
                         >
                             <img 
-                                src="src/assets/Gemini Logo.png" 
+                                src="src\assets\Gemini Logo.png" 
                                 alt="AI" 
                                 style={{ width: '22px', height: '20px' }}
                             />
