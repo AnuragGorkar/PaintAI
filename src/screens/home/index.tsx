@@ -5,6 +5,7 @@ import axios from 'axios';
 import Draggable from 'react-draggable';
 import ResultPopup from '../resultpopup';
 import profileimage from '../../assets/profileimage.png';
+import geminilogo from '../../assets/Gemini Logo.png';
 
 interface GeneratedResult {
   expression: string;
@@ -262,7 +263,7 @@ export default function Home() {
                             variant="default"
                         >
                             <img 
-                                src="src\assets\Gemini Logo.png" 
+                                src={geminilogo} 
                                 alt="AI" 
                                 className="w-6 h-6 mr-2" 
                             />
@@ -305,7 +306,7 @@ export default function Home() {
                             variant="default"
                         >
                             <img 
-                                src="src\assets\Gemini Logo.png" 
+                                src={geminilogo}
                                 alt="AI" 
                                 style={{ width: '22px', height: '20px' }}
                             />
