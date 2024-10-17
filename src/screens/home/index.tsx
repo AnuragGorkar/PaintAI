@@ -4,6 +4,7 @@ import { RefreshCcw } from 'lucide-react';
 import axios from 'axios';
 import Draggable from 'react-draggable';
 import ResultPopup from '../resultpopup';
+import profileimage from '../../assets/profileimage.png';
 
 interface GeneratedResult {
   expression: string;
@@ -216,7 +217,7 @@ export default function Home() {
                                       shadow-[0_0_25px_rgba(147,51,234,1),_0_0_50px_rgba(147,51,234,0.7),_0_0_100px_rgba(147,51,234,0.5)]
                                       transition-transform duration-300 hover:scale-105">
                             <img 
-                                src="src\assets\profileimage.png" 
+                                src={profileimage} 
                                 alt="Logo" 
                                 className="w-full h-full object-cover"
                             />
@@ -279,7 +280,7 @@ export default function Home() {
                                       shadow-[0_0_25px_rgba(147,51,234,1),_0_0_50px_rgba(147,51,234,0.7),_0_0_100px_rgba(147,51,234,0.5)]
                                       transition-transform duration-300 hover:scale-105">
                             <img 
-                                src="src\assets\profileimage.png" 
+                                src={profileimage} 
                                 alt="Logo" 
                                 className="w-full h-full object-cover"
                             />
