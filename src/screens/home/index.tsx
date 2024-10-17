@@ -3,235 +3,205 @@ import { Button } from '@/components/ui/button';
 import { RefreshCcw } from 'lucide-react';
 import axios from 'axios';
 import Draggable from 'react-draggable';
-import { X } from 'lucide-react';
+import ResultPopup from '../resultpopup';
 
 interface GeneratedResult {
-    expression: string;
-    answer: string;
+  expression: string;
+  answer: string;
 }
 
-const ResultPopup = ({ results, onClose }) => {
-    useEffect(() => {
-      if (window.MathJax) {
-        window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
-      }
-    }, [results]);
-  
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-black border-2 border-gray-600 rounded-lg p-6 w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-white text-2xl font-bold">Results</h2>
-            <button onClick={onClose} className="text-white hover:text-gray-300">
-              <X size={24} />
-            </button>
-          </div>
-          <div className="space-y-4">
-            {results.map((result, index) => (
-              <div key={index} className="bg-gray-800 rounded p-4">
-                <div className="text-white mb-2">Expression:</div>
-                <div className="latex-content text-white mb-4">{result.expr}</div>
-                <div className="text-white mb-2">Result:</div>
-                <div className="latex-content text-white">{result.result}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-  
-
 export default function Home() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [color, setColor] = useState('rgb(255, 255, 255)');
-    const [reset, setReset] = useState(false);
-    const [dictOfVars, setDictOfVars] = useState({});
-    const [result, setResult] = useState<GeneratedResult>();
-    const [latexPosition, setLatexPosition] = useState({ x: 10, y: 200 });
-    const [latexExpression, setLatexExpression] = useState<Array<string>>([]);
-    const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
-    const [showResults, setShowResults] = useState(false);
-    const [results, setResults] = useState([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [color, setColor] = useState('rgb(255, 255, 255)');
+  const [reset, setReset] = useState(false);
+  const [dictOfVars, setDictOfVars] = useState<Record<string, unknown>>({});
+  const [result, setResult] = useState<GeneratedResult | undefined>();
+  const [latexPosition, setLatexPosition] = useState({ x: 10, y: 200 });
+  const [latexExpression, setLatexExpression] = useState<string[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [results, setResults] = useState<GeneratedResult[]>([]);
 
-    const SWATCHES = [
-        "#000000", "#ffffff", "#808080", "#ee3333",  
-        "#e64980", "#be4bdb", "#893200", "#228be6",  
-        "#3333ee", "#00aa00", "#fab005", "#fd7e14"
-    ];
+  const SWATCHES = [
+    "#000000", "#ffffff", "#808080", "#ee3333",  
+    "#e64980", "#be4bdb", "#893200", "#228be6",  
+    "#3333ee", "#00aa00", "#fab005", "#fd7e14"
+  ];
 
-    const getCoordinates = (event: React.MouseEvent | React.TouchEvent) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { x: 0, y: 0 };
+  const getCoordinates = (event: React.MouseEvent | React.TouchEvent): { x: number; y: number } => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
 
-        const rect = canvas.getBoundingClientRect();
-        let clientX, clientY;
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
 
-        if (event.type.startsWith('touch')) {
-            const touch = (event as React.TouchEvent).touches[0];
-            clientX = touch.clientX;
-            clientY = touch.clientY;
-        } else {
-            clientX = (event as React.MouseEvent).clientX;
-            clientY = (event as React.MouseEvent).clientY;
-        }
+    if (event.type.startsWith('touch')) {
+      const touch = (event as React.TouchEvent).touches[0];
+      clientX = touch.clientX;
+      clientY = touch.clientY;
+    } else {
+      clientX = (event as React.MouseEvent).clientX;
+      clientY = (event as React.MouseEvent).clientY;
+    }
 
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
     };
+  };
 
-    const initializeCanvas = () => {
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const container = canvas.parentElement;
-            if (container) {
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
-                
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.lineCap = 'round';
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = color;
-                }
-            }
-        }
-    };
-
-    useEffect(() => {
-        const handleResize = () => {
-            initializeCanvas();
-        };
-
-        window.addEventListener('resize', handleResize);
-        initializeCanvas();
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    const renderLatexToCanvas = (expression: string, answer: string) => {
-        const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
-        setLatexExpression([...latexExpression, latex]);
-
-        // Clear the main canvas
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (result) {
-            renderLatexToCanvas(result.expression, result.answer);
-        }
-    }, [result]);
-
-    useEffect(() => {
-        if (latexExpression.length > 0 && window.MathJax) {
-            setTimeout(() => {
-                window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
-            }, 0);
-        }
-    }, [latexExpression]);
-
-    useEffect(() => {
-        initializeCanvas();
+  const initializeCanvas = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const container = canvas.parentElement;
+      if (container) {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
         
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_CHTML';
-        script.async = true;
-        document.head.appendChild(script);
-
-        script.onload = () => {
-            window.MathJax.Hub.Config({
-                tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
-            });
-        };
-
-        return () => {
-            document.head.removeChild(script);
-            if (script.parentNode) {
-                script.parentNode.removeChild(script);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if (reset) {
-            initializeCanvas();
-            setLatexExpression([]);
-            setResult(undefined);
-            setDictOfVars({});
-            setReset(false);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.lineCap = 'round';
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = color;
         }
-    }, [reset]);
+      }
+    }
+  };
 
-    const startDrawing = (event: React.MouseEvent | React.TouchEvent) => {
-        event.preventDefault();
-        const coords = getCoordinates(event);
-        setLastPos(coords);
-        setIsDrawing(true);
-        
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.beginPath();
-                ctx.moveTo(coords.x, coords.y);
-            }
-        }
+  useEffect(() => {
+    const handleResize = () => {
+      initializeCanvas();
     };
 
-    const draw = (event: React.MouseEvent | React.TouchEvent) => {
-        event.preventDefault();
-        if (!isDrawing) return;
-        
-        const coords = getCoordinates(event);
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.strokeStyle = color;
-                ctx.lineTo(coords.x, coords.y);
-                ctx.stroke();
-                setLastPos(coords);
-            }
-        }
-    };
+    window.addEventListener('resize', handleResize);
+    initializeCanvas();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-    const stopDrawing = () => {
-        setIsDrawing(false);
-    };
+  const renderLatexToCanvas = (expression: string, answer: string) => {
+    const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
+    setLatexExpression([...latexExpression, latex]);
 
-    const runRoute = async () => { 
-        const canvas = canvasRef.current;
+    // Clear the main canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (result) {
+      renderLatexToCanvas(result.expression, result.answer);
+    }
+  }, [result]);
+
+  useEffect(() => {
+    if (latexExpression.length > 0 && window.MathJax) {
+      setTimeout(() => {
+        window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
+      }, 0);
+    }
+  }, [latexExpression]);
+
+  useEffect(() => {
+    initializeCanvas();
     
-        if (canvas) {
-            const response = await axios({
-                method: 'post',
-                url: `${import.meta.env.VITE_API_URL}/calculate`,
-                data: {
-                    image: canvas.toDataURL('image/png'),
-                    dict_of_vars: dictOfVars
-                }
-            });
-    
-            const resp = await response.data;
-            console.log('Response', resp);
-    
-            if (resp.status === "success" && resp.data) {
-                setResults(resp.data); // Store the 'data' array as 'results'
-                setShowResults(true); // Show the popup
-            }
-        }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_CHTML';
+    script.async = true;
+    document.head.appendChild(script);
+
+    script.onload = () => {
+      (window as any).MathJax.Hub.Config({
+        tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']]},
+      });
     };
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reset) {
+      initializeCanvas();
+      setLatexExpression([]);
+      setResult(undefined);
+      setDictOfVars({});
+      setReset(false);
+    }
+  }, [reset]);
+
+  const startDrawing = (event: React.MouseEvent | React.TouchEvent) => {
+    event.preventDefault();
+    const coords = getCoordinates(event);
+    setIsDrawing(true);
+    
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(coords.x, coords.y);
+      }
+    }
+  };
+
+  const draw = (event: React.MouseEvent | React.TouchEvent) => {
+    event.preventDefault();
+    if (!isDrawing) return;
+    
+    const coords = getCoordinates(event);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = color;
+        ctx.lineTo(coords.x, coords.y);
+        ctx.stroke();
+      }
+    }
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const runRoute = async () => { 
+    const canvas = canvasRef.current;
+
+    if (canvas) {
+      try {
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL}/calculate`,
+          {
+            image: canvas.toDataURL('image/png'),
+            dict_of_vars: dictOfVars
+          }
+        );
+
+        const resp = response.data;
+        console.log('Response', resp);
+
+        if (resp.status === "success" && resp.data) {
+          // Ensure that resp.data is in the correct format
+          const formattedResults: GeneratedResult[] = resp.data.map((item: any) => ({
+            expression: item.expression || item.expr,
+            answer: item.answer || item.result
+          }));
+          setResults(formattedResults);
+          setShowResults(true);
+        }
+      } catch (error) {
+        console.error('Error during API call:', error);
+      }
+    }
+  };
     
 
     return (
@@ -374,24 +344,37 @@ export default function Home() {
                 onTouchEnd={stopDrawing}
             />
 
-            {latexExpression && latexExpression.map((latex, index) => (
-                <Draggable
-                    key={index}
-                    defaultPosition={latexPosition}
-                    onStop={(e, data) => setLatexPosition({ x: data.x, y: data.y })}
-                >
-                    <div className="absolute p-2 text-white rounded shadow-md">
-                        <div className="latex-content">{latex}</div>
-                    </div>
-                </Draggable>
-            ))}
+<canvas
+        ref={canvasRef}
+        id="canvas"
+        className="absolute top-0 left-0 w-full h-full touch-none"
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseOut={stopDrawing}
+        onTouchStart={startDrawing}
+        onTouchMove={draw}
+        onTouchEnd={stopDrawing}
+      />
 
-            {showResults && (
-                <ResultPopup
-                    results={results}
-                    onClose={() => setShowResults(false)}
-                />
-            )}
-        </div>
+      {latexExpression.map((latex, index) => (
+        <Draggable
+          key={index}
+          defaultPosition={latexPosition}
+          onStop={(_, data) => setLatexPosition({ x: data.x, y: data.y })}
+        >
+          <div className="absolute p-2 text-white rounded shadow-md">
+            <div className="latex-content">{latex}</div>
+          </div>
+        </Draggable>
+      ))}
+
+      {showResults && (
+        <ResultPopup
+          results={results}
+          onClose={() => setShowResults(false)}
+        />
+      )}
+    </div>
     );
 }
